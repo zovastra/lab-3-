@@ -1,0 +1,103 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+#define MAX_SIZE 100
+
+typedef struct {
+    int data[MAX_SIZE];
+    int top;
+} ArrayStack;
+
+void init_stack(ArrayStack *s) {
+    s->top = -1;
+}
+
+int is_empty(ArrayStack *s) {
+    return s->top == -1;
+}
+
+int is_full(ArrayStack *s) {
+    return s->top == MAX_SIZE - 1;
+}
+
+void push(ArrayStack *s, int val) {
+    if (is_full(s)) {
+        printf("[ПОМИЛКА] Стек переповнений! Неможливо додати: %d\n", val);
+        return;
+    }
+    s->data[++(s->top)] = val;
+}
+
+int pop(ArrayStack *s, int *error) {
+    if (is_empty(s)) {
+        printf("[ПОМИЛКА] Спроба pop з порожнього стека!\n");
+        *error = 1;
+        return 0;
+    }
+    *error = 0;
+    return s->data[(s->top)--];
+}
+
+int peek(ArrayStack *s, int *error) {
+    if (is_empty(s)) {
+        printf("[ПОМИЛКА] Спроба peek у порожньому стеку!\n");
+        *error = 1;
+        return 0;
+    }
+    *error = 0;
+    return s->data[s->top];
+}
+
+int evaluate_postfix(const char *expr) {
+    ArrayStack s;
+    init_stack(&s);
+    int err = 0;
+
+    for (int i = 0; expr[i] != '\0'; i++) {
+        if (expr[i] == ' ') continue;
+
+        if (isdigit(expr[i])) {
+            push(&s, expr[i] - '0');
+        } else if (expr[i] == '+' || expr[i] == '-' || expr[i] == '*' || expr[i] == '/') {
+            int val2 = pop(&s, &err);
+            if (err) return -9999;
+            int val1 = pop(&s, &err);
+            if (err) return -9999;
+
+            switch (expr[i]) {
+                case '+': push(&s, val1 + val2); break;
+                case '-': push(&s, val1 - val2); break;
+                case '*': push(&s, val1 * val2); break;
+                case '/': push(&s, val1 / val2); break;
+            }
+        }
+    }
+
+    int result = pop(&s, &err);
+    if (!is_empty(&s)) {
+        printf("[ПОМИЛКА] Некоректний вираз (залишилися зайві операнди).\n");
+        return -9999;
+    }
+    return result;
+}
+
+int main() {
+    printf("=== 1. ТЕСТ: Масивний стек (Постфіксний вираз) ===\n");
+    const char *expr1 = "5 3 - 2 *";
+    printf("Вираз: \"%s\"\n", expr1);
+    printf("Результат: %d\n\n", evaluate_postfix(expr1));
+
+    printf("=== 2. ТЕСТ: Перевірка помилки pop з порожнього стека ===\n");
+    ArrayStack s_test;
+    init_stack(&s_test);
+    int err;
+    pop(&s_test, &err);
+
+    printf("\n=== 3. ТЕСТ: Перевірка переповнення масиву (push) ===\n");
+    for (int i = 0; i <= MAX_SIZE; i++) {
+        push(&s_test, i);
+    }
+
+    return 0;
+}
